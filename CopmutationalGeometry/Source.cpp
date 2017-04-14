@@ -72,6 +72,43 @@ public:
 
 		return sum;
 	}
+
+	// find if c is to the left of the line a-b
+	bool isLeft(PointInt &a, PointInt &b, PointInt &c)
+	{
+		return findTriangleArea2(a, b, c) > 0;
+	}
+
+	// find if c is on the left or collinear with the line a-b
+	bool isLeftOrEqual(PointInt &a, PointInt &b, PointInt &c)
+	{
+		return findTriangleArea2(a, b, c) >= 0;
+	}
+
+	// find if c is collinear with the line a-b
+	bool isCollinear(PointInt &a, PointInt &b, PointInt &c)
+	{
+		return findTriangleArea2(a, b, c) == 0;
+	}
+
+	// find if the line segments a-b and c-d intersect
+	bool isIntersect(PointInt &a, PointInt &b, PointInt &c, PointInt&d)
+	{
+		// first remove collinearity
+		if (isCollinear(a, b, c) || isCollinear(a, b, d) || isCollinear(c, d, a) || isCollinear(c, d, b))
+		{
+			return 0;
+		}
+		if (isLeft(a, b, c) == isLeft(b, a, d))
+		{
+			if (isLeft(c, d, a) == isLeft(d, c, b))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 };
 
 int main()
