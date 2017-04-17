@@ -178,7 +178,31 @@ public:
 		return true;
 	}
 
-	// 
+	// is in cone (whether convex or concave)
+	bool isInCone(Vertex *a, Vertex *b)
+	{
+		// a0, a, a1 are consecutive
+		Vertex *a0, *a1;
+		a1 = a->next;
+		a0 = a->prev;
+
+		// if convex
+		if (isLeftOrEqual(a0->v, a->v, a1->v))
+		{
+			return (isLeft(a->v, b->v, a0->v) && isLeft(b->v, a->v, a1->v));
+		}
+		else
+		{
+			// reflex
+			return ! (isLeftOrEqual(a->v, b->v, a1->v) && isLeftOrEqual(b->v, a->v, a0->v));
+		}
+	}
+
+	// is this a diagonal
+	bool isDiagonal(Vertex *a, Vertex *b)
+	{
+		return (isInCone(a, b) && isInCone(b, a) && isDiagonalWeak(a, b));
+	}
 };
 
 int main()
