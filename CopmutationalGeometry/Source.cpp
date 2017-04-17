@@ -2,6 +2,10 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <opencv2\opencv.hpp>
+#include <opencv2\imgproc.hpp>
+#include <opencv2\highgui.hpp>
+
 
 using namespace std;
 
@@ -25,15 +29,9 @@ private:
 public:
 	Polygon() { head = 0; }
 
-	// inserting new vertex from pointInt
-	bool insertVertex(PointInt pt)
+	// inserting new vertex from Vertex
+	bool insertVertex(Vertex *v)
 	{
-		Vertex * v = new Vertex;
-		v->v = pt;
-		if (v == 0)
-		{// couldn't allocate memory
-			return false;
-		}
 		if (head == 0)
 		{
 			head = v;
@@ -52,7 +50,19 @@ public:
 			v->prev = tmp;
 			tmp->next = v;
 		}
-		return false;
+		return true;
+	}
+
+	// inserting new vertex from pointInt
+	bool insertVertex(PointInt pt)
+	{
+		Vertex * v = new Vertex;
+		v->v = pt;
+		if (v == 0)
+		{// couldn't allocate memory
+			return false;
+		}
+		return insertVertex(v);
 	}
 	
 	// find double the triangle area from three points
@@ -203,11 +213,57 @@ public:
 	{
 		return (isInCone(a, b) && isInCone(b, a) && isDiagonalWeak(a, b));
 	}
+
+	// draw
+	void draw()
+	{
+		cv::Mat img = cv::Mat::zeros(cv::Size(200, 200), CV_8UC3);
+
+		Vertex*p = head;
+
+		
+		do
+		{
+			cv::line(img, cv::Point(p->v[0], p->v[1]), cv::Point(p->next->v[0], p->next->v[1]), cv::Scalar(255, 255, 255), 1);
+			p = p->next;
+		} while (p != head);
+
+		cv::imshow("img", img);
+		cv::waitKey();
+	}
+
+	void drawEars()
+	{
+		cv::Mat img = cv::Mat::zeros(cv::Size(200, 200), CV_8UC3);
+
+		Vertex*p = head;
+
+
+		do
+		{
+			cv::line(img, cv::Point(p->v[0], p->v[1]), cv::Point(p->next->v[0], p->next->v[1]), cv::Scalar(255, 255, 255), 1);
+			if (!isDiagonal(p->prev, p->next))
+			{
+				cv::line(img, cv::Point(p->prev->v[0], p->prev->v[1]), cv::Point(p->next->v[0], p->next->v[1]), cv::Scalar(rand() % 256, rand() % 256, rand() % 256), 1);
+			}
+			p = p->next;
+		} while (p != head);
+
+		cv::imshow("img", img);
+		cv::waitKey();
+	}
 };
 
 int main()
 {
 	cout << "Hello Geometry!" << endl;
-
+	Polygon pol;
+	int x[] = { 10,10,-10,-10,0 };
+	int y[] = { 10,-10, -10,  10, 0 };
+	for (int i = 0; i < 5; i++)
+	{
+		pol.insertVertex(PointInt({ 100 + 3 * x[i], 100 + 3 * y[i] }));
+	}
+	pol.drawEars();
 	return 0;
 }
