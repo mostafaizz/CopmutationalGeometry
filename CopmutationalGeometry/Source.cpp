@@ -25,9 +25,13 @@ struct Vertex
 class Polygon
 {
 private:
+	int nVertices;
 	Vertex* head;
 public:
-	Polygon() { head = 0; }
+	Polygon() {
+		head = 0; 
+		nVertices = 0;
+	}
 
 	// inserting new vertex from Vertex
 	bool insertVertex(Vertex *v)
@@ -35,21 +39,17 @@ public:
 		if (head == 0)
 		{
 			head = v;
-			head->vNum = 0;
 			head->prev = head->next = head;
 		}
 		else
 		{
-			Vertex* tmp = head;
-			while (tmp->next != head)
-			{
-				tmp = tmp->next;
-			}
+			Vertex* tmp = head->prev;
+			tmp->next = v;
 			v->next = head;
 			head->prev = v;
 			v->prev = tmp;
-			tmp->next = v;
 		}
+		v->vNum = nVertices++;
 		return true;
 	}
 
@@ -69,6 +69,7 @@ public:
 	int findTriangleArea2(PointInt &a, PointInt &b, PointInt &c)
 	{
 		return (b[X] - a[X]) * (c[Y] - a[Y]) - (c[X] - a[X]) * (b[Y] - a[Y]);
+		//return (c[X] - b[X]) * (a[Y] - b[Y]) - (c[Y] - b[Y]) * (a[X] - b[X]);
 	}
 
 	// find double the polygon area
@@ -98,7 +99,9 @@ public:
 	// find if c is on the left or collinear with the line a-b
 	bool isLeftOrEqual(PointInt &a, PointInt &b, PointInt &c)
 	{
-		return findTriangleArea2(a, b, c) >= 0;
+		int area = findTriangleArea2(a, b, c);
+		//cout << area << endl;
+		return area >= 0;
 	}
 
 	// find if c is collinear with the line a-b
@@ -214,14 +217,94 @@ public:
 		return (isInCone(a, b) && isInCone(b, a) && isDiagonalWeak(a, b));
 	}
 
+	// set if each vertex is an ear tip
+	void initEars()
+	{
+		Vertex *v0, *v1, *v2;
+
+		v1 = head;
+		do
+		{
+			v2 = v1->next;
+			v0 = v1->prev;
+			v1->ear = isDiagonal(v0, v2);
+			v1 = v1->next;
+		} while (v1 != head);
+	}
+
+	//triangulate 
+	// each row is one triangle where the first and last vertices are the digonal
+	vector<vector<Vertex*> > triangulate()
+	{
+		vector<vector<Vertex*> > res;
+		Vertex *v[5];
+		int n = nVertices;
+		// init Ears
+		initEars();
+		int prevN = n + 1;
+		while (n > 3 && prevN != n)
+		{
+			prevN = n;
+			v[2] = head;
+			do
+			{
+				if (v[2]->ear)
+				{
+					// init all vertices
+					v[3] = v[2]->next; v[4] = v[3]->next;
+					v[1] = v[2]->prev; v[0] = v[1]->prev;
+
+					// v[1]->v[3] is a digonal
+					vector<Vertex*> triangle;
+					triangle.push_back(v[1]);
+					triangle.push_back(v[2]);
+					triangle.push_back(v[3]);
+					res.push_back(triangle);
+					// update ears
+					v[1]->ear = isDiagonal(v[0], v[3]);
+					v[3]->ear = isDiagonal(v[1], v[4]);
+
+					// remove the current ear
+					v[1]->next = v[3];
+					v[3]->prev = v[1];
+					head = v[3];
+					n--;
+					cout << n << endl;
+					break;
+				}
+				v[2] = v[2]->next;
+
+			} while (v[2] != head);
+		}
+		return res;
+	}
+
+	// draw
+	void drawTriangulate()
+	{
+		cv::Mat img = cv::Mat::zeros(cv::Size(200, 200), CV_8UC3);
+
+		Vertex*p = head;
+		do
+		{
+			cv::line(img, cv::Point(p->v[0], p->v[1]), cv::Point(p->next->v[0], p->next->v[1]), cv::Scalar(255, 255, 255), 1);
+			p = p->next;
+		} while (p != head);
+		vector<vector<Vertex*> > tris = triangulate();
+		for (int i = 0; i < tris.size(); i++)
+		{
+			cv::line(img, cv::Point(tris[i][0]->v[0], tris[i][0]->v[1]), cv::Point(tris[i][2]->v[0], tris[i][2]->v[1]), cv::Scalar(0, 0, 255), 1);
+		}
+		cv::imshow("img", img);
+		cv::waitKey();
+	}
+
 	// draw
 	void draw()
 	{
 		cv::Mat img = cv::Mat::zeros(cv::Size(200, 200), CV_8UC3);
 
 		Vertex*p = head;
-
-		
 		do
 		{
 			cv::line(img, cv::Point(p->v[0], p->v[1]), cv::Point(p->next->v[0], p->next->v[1]), cv::Scalar(255, 255, 255), 1);
@@ -237,18 +320,18 @@ public:
 		cv::Mat img = cv::Mat::zeros(cv::Size(200, 200), CV_8UC3);
 
 		Vertex*p = head;
-
-
+		int count = 0;
 		do
 		{
-			cv::line(img, cv::Point(p->v[0], p->v[1]), cv::Point(p->next->v[0], p->next->v[1]), cv::Scalar(255, 255, 255), 1);
-			if (!isDiagonal(p->prev, p->next))
+			//cv::line(img, cv::Point(p->v[0], p->v[1]), cv::Point(p->next->v[0], p->next->v[1]), cv::Scalar(255, 255, 255), 1);
+			if (isDiagonal(p->prev, p->next))
 			{
 				cv::line(img, cv::Point(p->prev->v[0], p->prev->v[1]), cv::Point(p->next->v[0], p->next->v[1]), cv::Scalar(rand() % 256, rand() % 256, rand() % 256), 1);
+				++count;
 			}
 			p = p->next;
 		} while (p != head);
-
+		cout << count << endl;
 		cv::imshow("img", img);
 		cv::waitKey();
 	}
@@ -258,12 +341,24 @@ int main()
 {
 	cout << "Hello Geometry!" << endl;
 	Polygon pol;
-	int x[] = { 10,10,-10,-10,0 };
-	int y[] = { 10,-10, -10,  10, 0 };
-	for (int i = 0; i < 5; i++)
+	//int x[] = { 1,1,-1,-1};
+	//int y[] = { 1,-1, -1,  1};
+	//int x[] = { -1,1,1,-1, 0};
+	//int y[] = { -1,-1, 1, 1, 0};
+
+	int x[] = { 0,10,12,20, 13, 10, 12, 14, 8,  6, 10,  7,  0,  1,  3, 5,-2, 5};
+	int y[] = { 0, 7, 3, 8, 17, 12, 14, 9, 10, 14, 15, 18, 16, 13, 15, 8, 9, 5};
+	
+	//int x[] = { 0, 10, 3, 0};
+	//int y[] = { 0, 0, 3, 10};
+	
+	for (int i = 0; i < 17; i++)
 	{
-		pol.insertVertex(PointInt({ 100 + 3 * x[i], 100 + 3 * y[i] }));
+		pol.insertVertex(PointInt({ 10 * x[i], 10 * y[i] }));
 	}
-	pol.drawEars();
+	//pol.draw();
+	//pol.drawEars();
+	pol.drawTriangulate();
+	
 	return 0;
 }
