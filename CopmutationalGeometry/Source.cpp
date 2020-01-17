@@ -282,7 +282,7 @@ public:
 	// draw
 	void drawTriangulate()
 	{
-		cv::Mat img = cv::Mat::zeros(cv::Size(200, 200), CV_8UC3);
+		cv::Mat img = cv::Mat::zeros(cv::Size(400, 400), CV_8UC3);
 
 		Vertex*p = head;
 		do
@@ -347,14 +347,14 @@ int main()
 	//int y[] = { -1,-1, 1, 1, 0};
 
 	int x[] = { 0,10,12,20, 13, 10, 12, 14, 8,  6, 10,  7,  0,  1,  3, 5,-2, 5};
-	int y[] = { 0, 7, 3, 8, 17, 12, 14, 9, 10, 14, 15, 18, 16, 13, 15, 8, 9, 5};
+	int y[] = { 0, 7, 3, 8, 17, 12, 14, 9, 10, 14, 15, 18, 17, 13, 15, 8, 7, 5};
 	
 	//int x[] = { 0, 10, 3, 0};
 	//int y[] = { 0, 0, 3, 10};
 	
 	for (int i = 0; i < 17; i++)
 	{
-		pol.insertVertex(PointInt({ 10 * x[i], 10 * y[i] }));
+		pol.insertVertex(PointInt({40 + 15 * x[i], 40 + 15 * y[i] }));
 	}
 	//pol.draw();
 	//pol.drawEars();
